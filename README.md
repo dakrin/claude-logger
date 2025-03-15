@@ -94,6 +94,10 @@ claude-20250315-123456-project-refactoring.log
 
 MIT License
 
+## Important Notes
+
+- **API Usage**: This script makes a small additional API call to Claude when generating summaries. This may incur additional API costs depending on your usage and pricing plan.
+
 ## Acknowledgements
 
 - [Anthropic](https://www.anthropic.com/) - Creators of Claude
