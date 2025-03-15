@@ -63,7 +63,7 @@ test_has_meaningful_interaction() {
 
 # Test against your specific log file
 echo "=== TESTING DETECTION: TEST 1 ==="
-test_has_meaningful_interaction "/path/to/user/claude-logs/claude-20250315-163214-CLI-Interface-Preview.log"
+test_has_meaningful_interaction "$HOME/claude-logs/claude-20250315-163214-CLI-Interface-Preview.log"
 echo ""
 
 # Find other logs to test with

@@ -6,7 +6,7 @@ This guide provides step-by-step instructions for testing the smart logging feat
 
 1. Open a terminal and navigate to the test directory:
    ```bash
-   cd /path/to/user/Dev/claude-logger/test-smart-logging
+   cd path/to/claude-logger/test-smart-logging
    ```
 
 2. Make sure all test scripts are executable:
@@ -112,7 +112,7 @@ This test verifies that the version information is correctly displayed.
 
 If any tests fail, you can investigate:
 
-- Check the script code in `/path/to/user/Dev/claude-logger/claude-log`
+- Check the script code in `path/to/claude-logger/claude-log`
 - Examine the log files in `~/claude-logs`
 - Try running claude-log with different arguments
 

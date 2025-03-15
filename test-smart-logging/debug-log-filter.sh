@@ -7,7 +7,7 @@ LOG_FILE="$1"
 
 if [ -z "$LOG_FILE" ]; then
   echo "Usage: $0 <path-to-log-file>"
-  echo "Example: $0 /path/to/user/claude-logs/claude-20250315-163214-CLI-Interface-Preview.log"
+  echo "Example: $0 ~/claude-logs/claude-20250315-163214-CLI-Interface-Preview.log"
   exit 1
 fi
 
