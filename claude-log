@@ -28,7 +28,6 @@ done
 
 # If --nolog is specified, just run Claude directly without logging
 if $NOLOG; then
-  echo "Running Claude without logging..."
   exec claude "${CLAUDE_ARGS[@]}"
   exit $?
 fi
@@ -37,8 +36,6 @@ LOG_DIR=~/claude-logs
 mkdir -p "$LOG_DIR"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 TEMP_LOG=$(mktemp)
-
-echo "Claude session starting - will log if you type anything other than 'exit'"
 
 # STOP overcomplicating things! Use what works!
 # Option 1 in the test script works perfectly for colors
@@ -51,7 +48,6 @@ echo "Claude session starting - will log if you type anything other than 'exit'"
 SCRIPT_LOG=$(mktemp)
 
 # Run claude with script to capture output
-echo "Starting Claude with color support..."
 script -q "$SCRIPT_LOG" claude "${CLAUDE_ARGS[@]}"
 
 # Copy script log to temp log for processing
