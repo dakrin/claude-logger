@@ -66,23 +66,19 @@ has_meaningful_interaction() {
   local log_file="$1"
   local found_interaction=false
   
-  # Read the file line by line
-  while IFS= read -r line; do
-    # First check for input prompt pattern
-    if [[ "$line" =~ .*\>\ (.*) ]]; then
-      content="${BASH_REMATCH[1]}"
-      
-      # Skip empty inputs, exit commands, or stock suggestions
-      if [[ -n "$content" && 
-            ! "$content" =~ ^(exit|e|ex|exi)$ && 
-            ! "$content" =~ ^Try ]]; then
-        # Don't log debugging in final version
-        # echo "Found meaningful input: $content"
-        found_interaction=true
-        break
-      fi
-    fi
-  done < "$log_file"
+  # Simple heuristic based solely on file size
+  # If the file is very small, it's likely just a session with "exit"
+  local file_size=$(wc -c < "$log_file")
+  
+  # Threshold value based on observed file sizes
+  # Exit-only logs are ~5KB, meaningful logs are >10KB
+  local threshold=10000  # 10KB
+  
+  if [ "$file_size" -gt "$threshold" ]; then
+    found_interaction=true
+  else
+    found_interaction=false
+  fi
   
   $found_interaction
 }
