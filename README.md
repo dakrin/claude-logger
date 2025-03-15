@@ -9,8 +9,6 @@ A wrapper for Anthropic's Claude CLI that automatically logs conversations, pres
 - **Smart filtering**: Doesn't log sessions where you only type "exit" or nothing at all
 - **Auto-summarizing**: Automatically generates a concise 1-3 word summary of each conversation
 - **Clean logs**: Strips ANSI color codes from log files for readability
-- **Intelligent naming**: Renames log files to include the summary for easy identification
-- **No-log option**: Ability to run without logging via `--nolog` flag
 
 ## Installation
 
