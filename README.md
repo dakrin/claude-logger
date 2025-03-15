@@ -1,13 +1,16 @@
 # Claude Logger
 
-A simple wrapper for Anthropic's Claude CLI that automatically logs conversations and summarizes them with intelligent file naming.
+A wrapper for Anthropic's Claude CLI that automatically logs conversations, preserves color output, and summarizes conversations with intelligent file naming.
 
 ## Features
 
-- Logs all Claude CLI conversations to timestamped files
-- Automatically generates a concise 1-3 word summary of each conversation
-- Renames log files to include the summary for easy identification
-- Preserves all CLI arguments to Claude
+- **Auto-logging**: Logs all Claude CLI conversations to timestamped files
+- **Color support**: Preserves Claude's colorized output in the terminal
+- **Smart filtering**: Doesn't log sessions where you only type "exit" or nothing at all
+- **Auto-summarizing**: Automatically generates a concise 1-3 word summary of each conversation
+- **Clean logs**: Strips ANSI color codes from log files for readability
+- **Intelligent naming**: Renames log files to include the summary for easy identification
+- **No-log option**: Ability to run without logging via `--nolog` flag
 
 ## Installation
 
@@ -38,6 +41,8 @@ A simple wrapper for Anthropic's Claude CLI that automatically logs conversation
 
 ## Usage
 
+### Basic Usage
+
 Simply use `claude-log` instead of `claude`:
 
 ```bash
@@ -50,15 +55,42 @@ All arguments are passed directly to Claude:
 claude-log --cwd /path/to/project
 ```
 
+### Command-line Options
+
+- `--version` or `-v`: Display version information
+  ```bash
+  claude-log --version
+  ```
+
+- `--nolog`: Run Claude without logging (just passes through to Claude CLI)
+  ```bash
+  claude-log --nolog
+  ```
+
 When you exit Claude, the wrapper will:
-1. Generate a 1-3 word summary of your conversation
-2. Rename the log file to include this summary
-3. Display the final log file path
+1. Check if any meaningful conversation occurred (ignores sessions with just "exit" commands)
+2. If a real conversation happened, it will:
+   - Generate a 1-3 word summary of your conversation
+   - Rename the log file to include this summary
+   - Display the final log file path
 
 All logs are saved in `~/claude-logs/` with filenames like:
 ```
 claude-20250315-123456-project-refactoring.log
 ```
+
+## How It Works
+
+1. Runs Claude CLI in a pseudo-TTY to preserve color output
+2. Captures all input and output to a log file
+3. When Claude exits, checks if any meaningful conversation happened
+4. If a real conversation occurred, generates a summary using Claude itself
+5. Renames the log file with the generated summary
+
+## Version History
+
+- **1.2.0**: Added direct color support, smart filtering for exit-only sessions, and `--nolog` option
+- **1.0.0**: Initial release
 
 ## License
 

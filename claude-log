@@ -1,26 +1,132 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # claude-log - A wrapper for Claude CLI that logs conversations and auto-summarizes
 # https://github.com/dakrin/claude-logger
+# Version: 1.2.0 (Direct Color Support)
 #
 
+# Display version information if requested
+VERSION="1.2.0 (Direct Color Support)"
+if [[ "$1" == "--version" || "$1" == "-v" ]]; then
+  echo "claude-log version $VERSION"
+  echo "https://github.com/dakrin/claude-logger"
+  exit 0
+fi
+
+# Check for --nolog option
+NOLOG=false
+CLAUDE_ARGS=()
+
+# Parse arguments
+for arg in "$@"; do
+  if [[ "$arg" == "--nolog" ]]; then
+    NOLOG=true
+  else
+    CLAUDE_ARGS+=("$arg")
+  fi
+done
+
+# If --nolog is specified, just run Claude directly without logging
+if $NOLOG; then
+  echo "Running Claude without logging..."
+  exec claude "${CLAUDE_ARGS[@]}"
+  exit $?
+fi
+
 LOG_DIR=~/claude-logs
-mkdir -p $LOG_DIR
+mkdir -p "$LOG_DIR"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-LOG_FILE=$LOG_DIR/claude-$TIMESTAMP.log
+TEMP_LOG=$(mktemp)
 
-echo "Logging Claude session to $LOG_FILE"
+echo "Claude session starting - will log if you type anything other than 'exit'"
 
-# Run Claude and capture output
-claude "$@" 2>&1 | tee -a $LOG_FILE
+# STOP overcomplicating things! Use what works!
+# Option 1 in the test script works perfectly for colors
 
-# When Claude exits, generate a summary
-echo -e "\nGenerating session summary..."
-SUMMARY=$(claude --print "Read this conversation and create an extremely concise summary using AT MOST 3 words (not 4 or more). Separate the words with hyphens instead of spaces. The summary MUST NOT exceed 3 words total:
+# Two-part strategy:
+# 1. Just run claude directly for colors in terminal
+# 2. After it's done, generate a log file from the script output
+
+# Create a log file path for script
+SCRIPT_LOG=$(mktemp)
+
+# Run claude with script to capture output
+echo "Starting Claude with color support..."
+script -q "$SCRIPT_LOG" claude "${CLAUDE_ARGS[@]}"
+
+# Copy script log to temp log for processing
+cp "$SCRIPT_LOG" "$TEMP_LOG"
+
+# Remove ANSI color codes from the log file for cleaner logs
+sed -i'.bak' -E 's/\x1b\[[0-9;]*m//g' "$TEMP_LOG"
+rm -f "${TEMP_LOG}.bak" "$SCRIPT_LOG"
+
+# Debug - print part of the log to see what we're working with
+# echo "Sample from the log:"
+# head -20 "$TEMP_LOG"
+
+# Define a function to check if the log contains meaningful interaction
+has_meaningful_interaction() {
+  local log_file="$1"
+  local found_interaction=false
+  
+  # Read the file line by line
+  while IFS= read -r line; do
+    # First check for input prompt pattern
+    if [[ "$line" =~ .*\>\ (.*) ]]; then
+      content="${BASH_REMATCH[1]}"
+      
+      # Skip empty inputs, exit commands, or stock suggestions
+      if [[ -n "$content" && 
+            ! "$content" =~ ^(exit|e|ex|exi)$ && 
+            ! "$content" =~ ^Try ]]; then
+        # Don't log debugging in final version
+        # echo "Found meaningful input: $content"
+        found_interaction=true
+        break
+      fi
+    fi
+  done < "$log_file"
+  
+  $found_interaction
+}
+
+# Check if the log contains meaningful interaction
+if has_meaningful_interaction "$TEMP_LOG"; then
+  # User typed something meaningful, save the log
+  LOG_FILE="$LOG_DIR/claude-$TIMESTAMP.log"
+  cp "$TEMP_LOG" "$LOG_FILE"
+  echo -e "\nLogging session to $LOG_FILE"
+  
+  # Generate a summary
+  echo "Generating session summary..."
+  SUMMARY=$(claude --print "Provide a 1-3 word summary. ONLY 1-3 words. Only respond with the 1-3 words and nothing else. We are using your output in the CLI so do not respond with any other thoughts besides those 1-3 words. Make sure the 1-3 words are separated with a dash and no spaces. Do not include any other thoughts besides the 1-3 words:
 
 $(cat $LOG_FILE)")
 
-# Append summary to log filename
-echo "Summary: $SUMMARY"
-mv "$LOG_FILE" "$LOG_DIR/claude-$TIMESTAMP-$SUMMARY.log"
-echo "Log saved to $LOG_DIR/claude-$TIMESTAMP-$SUMMARY.log"
+  # Extract any word-dash-word pattern or just take the first word as fallback
+  if [[ "$SUMMARY" =~ ([a-zA-Z0-9]+-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?) ]]; then
+    SUMMARY="${BASH_REMATCH[1]}"
+  else
+    SUMMARY=$(echo "$SUMMARY" | head -1 | awk '{print $1}' || echo "claude-log")
+  fi
+
+  # Sanitize summary for safe filename use
+  echo "Summary: $SUMMARY"
+  SAFE_SUMMARY=$(echo "$SUMMARY" | tr -cd '[:alnum:]_-.')
+
+  # Truncate if too long
+  if [ ${#SAFE_SUMMARY} -gt 50 ]; then
+    SAFE_SUMMARY="${SAFE_SUMMARY:0:50}"
+  fi
+
+  # Append summary to log filename
+  FINAL_LOG_FILE="$LOG_DIR/claude-$TIMESTAMP-$SAFE_SUMMARY.log"
+  mv "$LOG_FILE" "$FINAL_LOG_FILE"
+  echo "Log saved to $FINAL_LOG_FILE"
+else
+  echo "No logging - session contained no meaningful input"
+fi
+
+# Clean up
+rm -f "$TEMP_LOG"
