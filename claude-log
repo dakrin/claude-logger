@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# claude-log - A wrapper for Claude CLI that logs conversations and auto-summarizes
+# https://github.com/dakrin/claude-logger
+#
+
+LOG_DIR=~/claude-logs
+mkdir -p $LOG_DIR
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+LOG_FILE=$LOG_DIR/claude-$TIMESTAMP.log
+
+echo "Logging Claude session to $LOG_FILE"
+
+# Run Claude and capture output
+claude "$@" 2>&1 | tee -a $LOG_FILE
+
+# When Claude exits, generate a summary
+echo -e "\nGenerating session summary..."
+SUMMARY=$(claude --print "Read this conversation and create an extremely concise summary using AT MOST 3 words (not 4 or more). Separate the words with hyphens instead of spaces. The summary MUST NOT exceed 3 words total:
+
+$(cat $LOG_FILE)")
+
+# Append summary to log filename
+echo "Summary: $SUMMARY"
+mv "$LOG_FILE" "$LOG_DIR/claude-$TIMESTAMP-$SUMMARY.log"
+echo "Log saved to $LOG_DIR/claude-$TIMESTAMP-$SUMMARY.log"
