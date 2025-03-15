@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+#
+# claude-color-test - A simplified test for Claude CLI color output
+# https://github.com/dakrin/claude-logger
+#
+
+echo "Testing Claude with color - choose a method (1-5):"
+echo "1. Simple direct execution"
+echo "2. Unbuffer method"
+echo "3. Environment variables method"
+echo "4. TTY script method"
+echo "5. Original script method"
+read -p "Choose method (1-5): " choice
+
+case $choice in
+  1)
+    echo "Using simple direct execution..."
+    claude "$@"
+    ;;
+  2)
+    echo "Using unbuffer method..."
+    unbuffer claude "$@"
+    ;;
+  3)
+    echo "Using environment variables method..."
+    FORCE_COLOR=1 COLORTERM=truecolor TERM=xterm-256color claude "$@"
+    ;;
+  4)
+    echo "Using TTY script method (macOS compatible)..."
+    # The specific macOS compatible approach
+    script -q /tmp/claude-output.log claude "$@"
+    ;;
+  5)
+    echo "Using original script method from your existing script..."
+    bash -c "script -q /dev/null -c \"claude $*\" 2>&1"
+    ;;
+  *)
+    echo "Invalid choice, exiting..."
+    exit 1
+    ;;
+esac
+
+echo "Test completed."
