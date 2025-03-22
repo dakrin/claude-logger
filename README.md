@@ -87,6 +87,7 @@ claude-20250315-123456-project-refactoring.log
 
 ## Version History
 
+- **1.2.1**: Added cross-platform compatibility for macOS and Linux
 - **1.2.0**: Added direct color support, smart filtering for exit-only sessions, and `--nolog` option
 - **1.0.0**: Initial release
 

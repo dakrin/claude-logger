@@ -2,11 +2,11 @@
 #
 # claude-log - A wrapper for Claude CLI that logs conversations and auto-summarizes
 # https://github.com/dakrin/claude-logger
-# Version: 1.2.0 (Direct Color Support)
+# Version: 1.2.1 (Cross-Platform Support)
 #
 
 # Display version information if requested
-VERSION="1.2.0 (Direct Color Support)"
+VERSION="1.2.1 (Cross-Platform Support)"
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
   echo "claude-log version $VERSION"
   echo "https://github.com/dakrin/claude-logger"
