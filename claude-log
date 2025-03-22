@@ -47,8 +47,14 @@ TEMP_LOG=$(mktemp)
 # Create a log file path for script
 SCRIPT_LOG=$(mktemp)
 
-# Run claude with script to capture output
-script -q "$SCRIPT_LOG" claude "${CLAUDE_ARGS[@]}"
+# Run claude with script to capture output - handle OS differences
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS syntax
+  script -q "$SCRIPT_LOG" claude "${CLAUDE_ARGS[@]}"
+else
+  # Linux syntax
+  script -q -c "claude ${CLAUDE_ARGS[*]}" "$SCRIPT_LOG"
+fi
 
 # Copy script log to temp log for processing
 cp "$SCRIPT_LOG" "$TEMP_LOG"
@@ -105,7 +111,8 @@ $(cat $LOG_FILE)")
 
   # Sanitize summary for safe filename use
   echo "Summary: $SUMMARY"
-  SAFE_SUMMARY=$(echo "$SUMMARY" | tr -cd '[:alnum:]_-.')
+  # Use character classes and individual characters to avoid range issues between macOS and Linux
+  SAFE_SUMMARY=$(echo "$SUMMARY" | tr -cd '[:alnum:]_.-')
 
   # Truncate if too long
   if [ ${#SAFE_SUMMARY} -gt 50 ]; then
