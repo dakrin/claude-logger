@@ -98,9 +98,39 @@ if has_meaningful_interaction "$TEMP_LOG"; then
   
   # Generate a summary
   echo "Generating session summary..."
+  
+  # Create an extracted version for summarization
+  EXTRACTED_LOG=$(mktemp)
+  
+  # Use simple extraction for now (full extraction logic will be in a future release)
+  sed -E 's/\x1b\[[0-9;]*[a-zA-Z]//g' "$LOG_FILE" | grep -E "^Human:|^Assistant:" > "$EXTRACTED_LOG"
+  
+  # Apply hard limit to ensure minimal API usage (~2000 tokens max)
+  MAX_CHARS=8000
+  EXTRACTED_SIZE=$(wc -c < "$EXTRACTED_LOG")
+  
+  if [ "$EXTRACTED_SIZE" -gt "$MAX_CHARS" ]; then
+    TRUNCATED_LOG=$(mktemp)
+    # Take first third and last third of content
+    SEGMENT_SIZE=$((MAX_CHARS / 3))
+    
+    # First part - beginning of conversation
+    head -c $SEGMENT_SIZE "$EXTRACTED_LOG" > "$TRUNCATED_LOG"
+    echo -e "\n...[middle content omitted]...\n" >> "$TRUNCATED_LOG"
+    
+    # Last part - end of conversation
+    tail -c $SEGMENT_SIZE "$EXTRACTED_LOG" >> "$TRUNCATED_LOG"
+    
+    mv "$TRUNCATED_LOG" "$EXTRACTED_LOG"
+  fi
+  
+  # Use the extracted dialogue for summarization
   SUMMARY=$(claude --print "Provide a 1-3 word summary. ONLY 1-3 words. Only respond with the 1-3 words and nothing else. We are using your output in the CLI so do not respond with any other thoughts besides those 1-3 words. Make sure the 1-3 words are separated with a dash and no spaces. Do not include any other thoughts besides the 1-3 words:
 
-$(cat $LOG_FILE)")
+$(cat $EXTRACTED_LOG)")
+  
+  # Clean up
+  rm -f "$EXTRACTED_LOG"
 
   # Extract any word-dash-word pattern or just take the first word as fallback
   if [[ "$SUMMARY" =~ ([a-zA-Z0-9]+-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?) ]]; then
