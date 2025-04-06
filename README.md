@@ -6,8 +6,7 @@ A wrapper for Anthropic's Claude CLI that automatically logs conversations, pres
 
 - **Auto-logging**: Logs all Claude CLI conversations to timestamped files
 - **Color support**: Preserves Claude's colorized output in the terminal
-- **Smart filtering**: Doesn't log sessions where you only type "exit" or nothing at all
-- **Auto-summarizing**: Automatically generates a concise 1-3 word summary of each conversation
+- **Terminal title integration**: Uses the terminal window title in log filenames
 - **Clean logs**: Strips ANSI color codes from log files for readability
 
 ## Installation
@@ -80,13 +79,17 @@ claude-20250315-123456-project-refactoring.log
 ## How It Works
 
 1. Runs Claude CLI in a pseudo-TTY to preserve color output
-2. Captures all input and output to a log file
-3. When Claude exits, checks if any meaningful conversation happened
-4. If a real conversation occurred, generates a summary using Claude itself
-5. Renames the log file with the generated summary
+2. Captures all input and output to a log file, including ANSI escape sequences
+3. Extracts the window title that Claude set during the session
+4. Uses the extracted title in the log filename for context-aware naming
+5. Saves the log with ANSI color codes removed for readability
+6. Works across both macOS and Linux terminal environments
 
 ## Version History
 
+- **1.3.6**: Improved window title extraction for both macOS and Linux
+- **1.3.5**: Enhanced terminal title detection with escape sequence parsing
+- **1.3.0**: Added terminal window title support for log filenames
 - **1.2.1**: Added cross-platform compatibility for macOS and Linux
 - **1.2.0**: Added direct color support, smart filtering for exit-only sessions, and `--nolog` option
 - **1.0.0**: Initial release
@@ -97,7 +100,7 @@ MIT License
 
 ## Important Notes
 
-- **API Usage**: This script makes a small additional API call to Claude when generating summaries. This may incur additional API costs depending on your usage and pricing plan.
+- **Terminal Title**: This script uses your terminal window title to name log files. If your terminal automatically updates window titles based on conversation topics, this will create context-aware log filenames without any additional API calls.
 
 ## Acknowledgements
 
