@@ -72,7 +72,7 @@ done <<< "$WINDOW_TITLES"
 
 # If we couldn't extract a title, fall back to the current directory
 if [[ -z "$LAST_TITLE" ]]; then
-  LAST_TITLE="Claude-$(basename "$PWD")"
+  LAST_TITLE="$(basename "$PWD")"
 else
   # Remove the initial "✳ " if present
   LAST_TITLE=${LAST_TITLE#"✳ "}
