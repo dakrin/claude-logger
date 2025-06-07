@@ -2,25 +2,31 @@
 #
 # claude-log - A wrapper for Claude CLI that logs conversations and auto-summarizes
 # https://github.com/dakrin/claude-logger
-# Version: 1.3.6 (Cross-Platform Title Extraction)
+# Version: 1.4.0 (Size-Based Logging)
 #
 
 # Display version information if requested
-VERSION="1.3.6 (Cross-Platform Title Extraction)"
+VERSION="1.4.0 (Size-Based Logging)"
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
   echo "claude-log version $VERSION"
   echo "https://github.com/dakrin/claude-logger"
   exit 0
 fi
 
-# Check for --nolog option
+# Check for options
 NOLOG=false
+FORCE_LOG=false
+SIZE_THRESHOLD=10000  # Default 10KB threshold
 CLAUDE_ARGS=()
 
 # Parse arguments
 for arg in "$@"; do
   if [[ "$arg" == "--nolog" ]]; then
     NOLOG=true
+  elif [[ "$arg" == "--force-log" ]]; then
+    FORCE_LOG=true
+  elif [[ "$arg" =~ ^--size-threshold=([0-9]+)$ ]]; then
+    SIZE_THRESHOLD="${BASH_REMATCH[1]}"
   else
     CLAUDE_ARGS+=("$arg")
   fi
@@ -78,24 +84,35 @@ else
   LAST_TITLE=${LAST_TITLE#"✳ "}
 fi
 
-# Save the log regardless of size
-LOG_FILE="$LOG_DIR/claude-$TIMESTAMP.log"
-cp "$CLEAN_LOG" "$LOG_FILE"
-echo -e "\nLogging session to $LOG_FILE"
-echo "Window title: $LAST_TITLE"
+# Check file size to determine if session should be logged
+FILE_SIZE=$(wc -c < "$CLEAN_LOG")
 
-# Sanitize title for safe filename use 
-SAFE_TITLE=$(echo "$LAST_TITLE" | tr -cd '[:alnum:]_.-')
-
-# Truncate if too long
-if [ ${#SAFE_TITLE} -gt 50 ]; then
-  SAFE_TITLE="${SAFE_TITLE:0:50}"
+# Check if we should save the log based on size
+if [[ "$FORCE_LOG" == "true" ]] || [[ "$FILE_SIZE" -gt "$SIZE_THRESHOLD" ]]; then
+  # Save the log
+  LOG_FILE="$LOG_DIR/claude-$TIMESTAMP.log"
+  cp "$CLEAN_LOG" "$LOG_FILE"
+  echo -e "\nLogging session to $LOG_FILE"
+  echo "Session size: $FILE_SIZE bytes (threshold: $SIZE_THRESHOLD)"
+  echo "Window title: $LAST_TITLE"
+  
+  # Sanitize title for safe filename use 
+  SAFE_TITLE=$(echo "$LAST_TITLE" | tr -cd '[:alnum:]_.-')
+  
+  # Truncate if too long
+  if [ ${#SAFE_TITLE} -gt 50 ]; then
+    SAFE_TITLE="${SAFE_TITLE:0:50}"
+  fi
+  
+  # Use window title for log filename
+  FINAL_LOG_FILE="$LOG_DIR/claude-$TIMESTAMP-$SAFE_TITLE.log"
+  mv "$LOG_FILE" "$FINAL_LOG_FILE"
+  echo "Log saved to $FINAL_LOG_FILE"
+else
+  # Session too small, don't save
+  echo -e "\nSession size: $FILE_SIZE bytes (below threshold: $SIZE_THRESHOLD)"
+  echo "No log saved - session too short. Use --force-log to override."
 fi
-
-# Use window title for log filename
-FINAL_LOG_FILE="$LOG_DIR/claude-$TIMESTAMP-$SAFE_TITLE.log"
-mv "$LOG_FILE" "$FINAL_LOG_FILE"
-echo "Log saved to $FINAL_LOG_FILE"
 
 # Clean up
 rm -f "$RAW_LOG" "$CLEAN_LOG"
